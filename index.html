@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="robots" content="noindex">
+  <title>Gastos</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    :root {
+      --fondo: #f3f4f6; --tarjeta: #ffffff; --tinta: #111827; --suave: #6b7280;
+      --borde: #e5e7eb; --acento: #0f766e; --sobre-acento: #ffffff; --acento-claro: #ccfbf1;
+      --mal: #b91c1c; --mal-claro: #fee2e2; --aviso: #92400e; --aviso-claro: #fef3c7;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --fondo: #0b1220; --tarjeta: #111a2b; --tinta: #f3f4f6; --suave: #9ca3af;
+        --borde: #263247; --acento: #2dd4bf; --sobre-acento: #042f2e; --acento-claro: #134e4a;
+        --mal: #fca5a5; --mal-claro: #450a0a; --aviso: #fcd34d; --aviso-claro: #422006;
+      }
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; }
+    body {
+      min-height: 100dvh; background: var(--fondo); color: var(--tinta);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+    }
+    main { max-width: 440px; margin: 0 auto; }
+    header { display: flex; align-items: center; justify-content: space-between; margin: 4px 4px 12px; }
+    h1 { font-size: 15px; font-weight: 600; color: var(--suave); margin: 0; letter-spacing: .02em; }
+    .enlace { border: 0; background: none; color: var(--suave); font-size: 14px; padding: 6px; }
+    .tarjeta {
+      background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 18px;
+      padding: 18px; margin-bottom: 14px;
+    }
+    .monto { display: flex; align-items: center; gap: 10px; }
+    .monto input {
+      flex: 1; min-width: 0; border: 0; background: transparent; color: var(--tinta);
+      font-size: 44px; font-weight: 700; padding: 0; outline: none; font-variant-numeric: tabular-nums;
+    }
+    .monto input::placeholder { color: var(--borde); }
+    .segmento { display: flex; background: var(--fondo); border-radius: 12px; padding: 4px; }
+    .segmento button {
+      border: 0; background: transparent; color: var(--suave); font-size: 15px; font-weight: 600;
+      padding: 8px 14px; border-radius: 9px;
+    }
+    .segmento button.activo { background: var(--acento); color: var(--sobre-acento); }
+    label, .rotulo { display: block; font-size: 13px; font-weight: 600; color: var(--suave); margin: 0 0 8px; }
+    .campo { margin-top: 18px; }
+    .campo:first-child { margin-top: 0; }
+    select, input[type=text], input[type=url], input[type=password] {
+      width: 100%; font-size: 17px; padding: 13px 14px; border-radius: 12px;
+      border: 1px solid var(--borde); background: var(--fondo); color: var(--tinta); outline: none;
+    }
+    select:focus, input:focus { border-color: var(--acento); }
+    .fichas { display: flex; flex-wrap: wrap; gap: 8px; }
+    .fichas button {
+      border: 1px solid var(--borde); background: var(--fondo); color: var(--tinta);
+      font-size: 15px; padding: 10px 14px; border-radius: 999px;
+    }
+    .fichas button.activo { background: var(--acento-claro); border-color: var(--acento); font-weight: 600; }
+    .cuotas { display: flex; align-items: center; gap: 14px; }
+    .cuotas button {
+      width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--borde);
+      background: var(--fondo); color: var(--tinta); font-size: 22px;
+    }
+    .cuotas output { font-size: 20px; font-weight: 700; min-width: 2ch; text-align: center; }
+    .cuotas small { color: var(--suave); font-size: 14px; }
+    [hidden] { display: none !important; }
+    .principal {
+      width: 100%; border: 0; border-radius: 16px; padding: 17px; font-size: 18px; font-weight: 700;
+      background: var(--acento); color: var(--sobre-acento);
+    }
+    .principal:disabled { opacity: .55; }
+    .aviso { margin-top: 14px; padding: 13px 15px; border-radius: 14px; font-size: 15px; line-height: 1.4; }
+    .aviso:empty { display: none; }
+    .aviso.bien { background: var(--acento-claro); }
+    .aviso.mal { background: var(--mal-claro); color: var(--mal); }
+    .aviso.espera { background: var(--tarjeta); color: var(--suave); border: 1px solid var(--borde); }
+    .aviso.pendiente { background: var(--aviso-claro); color: var(--aviso); }
+    p.ayuda { color: var(--suave); font-size: 14px; line-height: 1.5; margin: 0 0 14px; }
+  </style>
+</head>
+<body>
+  <main>
+    <section id="vistaAjustes" hidden>
+      <header><h1>Conectar con la planilla</h1><button class="enlace" id="cerrarAjustes" hidden>Volver</button></header>
+      <form id="formAjustes" class="tarjeta" autocomplete="off">
+        <p class="ayuda">Abrí en este celular el enlace que muestra la planilla en
+          <b>Finanzas → Ver claves de acceso</b>, o pegá los dos datos acá. Quedan guardados solo en este dispositivo.</p>
+        <div class="campo">
+          <label for="url">URL de la aplicación web</label>
+          <input type="url" id="url" required placeholder="https://script.google.com/macros/s/…/exec">
+        </div>
+        <div class="campo">
+          <label for="clave">Clave del formulario</label>
+          <input type="password" id="clave" required>
+        </div>
+        <div class="campo"><button class="principal">Guardar</button></div>
+      </form>
+      <div class="aviso" id="estadoAjustes" role="status"></div>
+    </section>
+
+    <section id="vistaGasto" hidden>
+      <header><h1>Anotar gasto</h1><button class="enlace" id="abrirAjustes">Ajustes</button></header>
+      <form id="formulario" autocomplete="off">
+        <div class="tarjeta">
+          <div class="monto">
+            <input id="monto" inputmode="decimal" placeholder="0" required aria-label="Monto">
+            <div class="segmento" id="moneda" role="group" aria-label="Moneda">
+              <button type="button" data-valor="UYU" class="activo">$</button>
+              <button type="button" data-valor="USD">US$</button>
+            </div>
+          </div>
+        </div>
+        <div class="tarjeta">
+          <div class="campo">
+            <label for="categoria">Categoría</label>
+            <select id="categoria"></select>
+          </div>
+          <div class="campo">
+            <span class="rotulo">Medio de pago</span>
+            <div class="fichas" id="medio" role="group" aria-label="Medio de pago"></div>
+          </div>
+          <div class="campo" id="campoCuotas" hidden>
+            <span class="rotulo">Cuotas</span>
+            <div class="cuotas">
+              <button type="button" id="menos" aria-label="Una cuota menos">−</button>
+              <output id="cuotas">1</output>
+              <button type="button" id="mas" aria-label="Una cuota más">+</button>
+              <small id="porCuota"></small>
+            </div>
+          </div>
+          <div class="campo">
+            <label for="descripcion">Descripción</label>
+            <input type="text" id="descripcion" maxlength="200" placeholder="Opcional">
+          </div>
+        </div>
+        <button class="principal" id="enviar">Anotar</button>
+      </form>
+      <div class="aviso" id="estado" role="status"></div>
+      <div class="aviso pendiente" id="pendientes" role="status"></div>
+    </section>
+  </main>
+
+  <script>
+    'use strict';
+    var K_CFG = 'gastos.cfg', K_LISTAS = 'gastos.listas', K_PEND = 'gastos.pendientes';
+    var URL_VALIDA = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/;
+
+    function el(id) { return document.getElementById(id); }
+    function leer(clave, defecto) {
+      try { var v = JSON.parse(localStorage.getItem(clave)); return v == null ? defecto : v; }
+      catch (e) { return defecto; }
+    }
+    function guardar(clave, valor) { localStorage.setItem(clave, JSON.stringify(valor)); }
+    function nuevoId() {
+      return 'f-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+    }
+    function aviso(id, texto, clase) {
+      el(id).textContent = texto;
+      el(id).className = 'aviso ' + (clase || '');
+    }
+
+    // ---- Conexión con la planilla ----
+
+    // Enlace de configuración: …/#u=<url>&k=<clave>. Se guarda y se borra de la barra.
+    (function tomarEnlace() {
+      var h = new URLSearchParams(location.hash.slice(1));
+      var u = h.get('u'), k = h.get('k');
+      if (!u || !k) return;
+      history.replaceState(null, '', location.pathname);
+      if (!URL_VALIDA.test(u)) return;
+      var actual = leer(K_CFG, null);
+      if (actual && (actual.url !== u || actual.clave !== k) &&
+          !confirm('Este enlace cambia la planilla a la que se envían tus gastos. ¿Reemplazar la conexión actual?')) return;
+      guardar(K_CFG, { url: u, clave: k });
+      localStorage.removeItem(K_LISTAS);
+    })();
+
+    // Sin cabeceras propias: así el navegador no hace una consulta previa que Apps Script no contesta.
+    function pedir(cuerpo) {
+      var cfg = leer(K_CFG, null);
+      return fetch(cfg.url, {
+        method: 'POST', redirect: 'follow',
+        body: JSON.stringify(Object.assign({ clave: cfg.clave }, cuerpo)),
+      }).then(function (r) { return r.json(); });
+    }
+
+    // ---- Ajustes ----
+
+    function mostrar(vista) {
+      el('vistaAjustes').hidden = vista !== 'ajustes';
+      el('vistaGasto').hidden = vista !== 'gasto';
+    }
+    el('abrirAjustes').addEventListener('click', function () {
+      var cfg = leer(K_CFG, {});
+      el('url').value = cfg.url || '';
+      el('clave').value = cfg.clave || '';
+      el('cerrarAjustes').hidden = false;
+      aviso('estadoAjustes', '');
+      mostrar('ajustes');
+    });
+    el('cerrarAjustes').addEventListener('click', function () { mostrar('gasto'); });
+    el('formAjustes').addEventListener('submit', function (evento) {
+      evento.preventDefault();
+      var u = el('url').value.trim(), k = el('clave').value.trim();
+      if (!URL_VALIDA.test(u)) {
+        return aviso('estadoAjustes', 'La URL tiene que ser la de la aplicación web: empieza con https://script.google.com/macros/s/ y termina en /exec.', 'mal');
+      }
+      var anterior = leer(K_CFG, null);
+      guardar(K_CFG, { url: u, clave: k });
+      aviso('estadoAjustes', 'Probando la conexión…', 'espera');
+      pedir({ accion: 'listas' }).then(function (r) {
+        if (!r.ok) throw new Error(r.error);
+        guardar(K_LISTAS, r.listas);
+        iniciar();
+      }).catch(function (e) {
+        if (anterior) guardar(K_CFG, anterior); else localStorage.removeItem(K_CFG);
+        aviso('estadoAjustes', 'No se pudo conectar: ' + (e.message === 'No autorizado' ? 'la clave no es válida.' : 'revisá la URL y la conexión.'), 'mal');
+      });
+    });
+
+    // ---- Formulario ----
+
+    var listas = { categorias: [], medios: [], credito: [] };
+    var idActual = nuevoId(), moneda = 'UYU', medio = '', cuotas = 1;
+
+    function armarListas() {
+      var elegida = el('categoria').value;
+      el('categoria').textContent = '';
+      listas.categorias.forEach(function (texto) {
+        var o = document.createElement('option');
+        o.textContent = texto;
+        el('categoria').appendChild(o);
+      });
+      if (listas.categorias.indexOf(elegida) > -1) el('categoria').value = elegida;
+      el('medio').textContent = '';
+      listas.medios.forEach(function (texto) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = texto;
+        b.addEventListener('click', function () { medio = texto; pintar(); });
+        el('medio').appendChild(b);
+      });
+      if (listas.medios.indexOf(medio) === -1) medio = listas.medios[0] || '';
+      pintar();
+    }
+
+    function pintar() {
+      Array.prototype.forEach.call(el('moneda').children, function (b) {
+        b.classList.toggle('activo', b.dataset.valor === moneda);
+      });
+      Array.prototype.forEach.call(el('medio').children, function (b) {
+        b.classList.toggle('activo', b.textContent === medio);
+      });
+      var esCredito = (listas.credito || []).indexOf(medio) > -1;
+      if (!esCredito) cuotas = 1;
+      el('campoCuotas').hidden = !esCredito;
+      el('cuotas').textContent = cuotas;
+      el('porCuota').textContent = cuotas > 1 ? 'el total se reparte en ' + cuotas + ' meses' : 'pago único';
+    }
+
+    Array.prototype.forEach.call(el('moneda').children, function (b) {
+      b.addEventListener('click', function () { moneda = b.dataset.valor; pintar(); });
+    });
+    el('menos').addEventListener('click', function () { cuotas = Math.max(1, cuotas - 1); pintar(); });
+    el('mas').addEventListener('click', function () { cuotas = Math.min(48, cuotas + 1); pintar(); });
+
+    function limpiar() {
+      idActual = nuevoId();
+      el('monto').value = '';
+      el('descripcion').value = '';
+      moneda = 'UYU';
+      cuotas = 1;
+      pintar();
+      el('monto').focus();
+    }
+
+    el('formulario').addEventListener('submit', function (evento) {
+      evento.preventDefault();
+      var gasto = {
+        id: idActual, monto: el('monto').value, moneda: moneda, categoria: el('categoria').value,
+        medio: medio, cuotas: cuotas, descripcion: el('descripcion').value,
+      };
+      el('enviar').disabled = true;
+      aviso('estado', 'Anotando…', 'espera');
+      pedir({ origen: 'formulario', gasto: gasto }).then(function (r) {
+        el('enviar').disabled = false;
+        if (!r.ok) return aviso('estado', r.error, 'mal');
+        aviso('estado', r.mensaje, 'bien');
+        limpiar();
+      }).catch(function () {
+        // Sin conexión o sin respuesta: se guarda con su id y se reintenta solo, sin duplicar.
+        el('enviar').disabled = false;
+        var cola = leer(K_PEND, []);
+        gasto.fecha = fechaLocal();
+        cola.push(gasto);
+        guardar(K_PEND, cola);
+        aviso('estado', '', '');
+        limpiar();
+        pintarPendientes();
+      });
+    });
+
+    function fechaLocal() {
+      var d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    // ---- Pendientes (anotados sin conexión) ----
+
+    function pintarPendientes(extra) {
+      var n = leer(K_PEND, []).length;
+      var texto = n ? (n === 1 ? 'Hay 1 gasto sin enviar.' : 'Hay ' + n + ' gastos sin enviar.') +
+        ' Se envían solos cuando haya conexión.' : '';
+      aviso('pendientes', [extra, texto].filter(Boolean).join(' '), 'pendiente');
+    }
+
+    var enviando = false;
+    function enviarPendientes() {
+      var cola = leer(K_PEND, []);
+      if (enviando || !cola.length || !leer(K_CFG, null)) return pintarPendientes();
+      enviando = true;
+      var gasto = cola[0];
+      pedir({ origen: 'formulario', gasto: gasto }).then(function (r) {
+        enviando = false;
+        // Con respuesta de la planilla (anotado o rechazado) sale de la cola.
+        guardar(K_PEND, leer(K_PEND, []).filter(function (g) { return g.id !== gasto.id; }));
+        if (!r.ok) {
+          pintarPendientes('No se anotó "' + (gasto.descripcion || gasto.categoria) + ' ' + gasto.monto + '": ' + r.error + '.');
+        } else {
+          pintarPendientes();
+          enviarPendientes();
+        }
+      }).catch(function () {
+        enviando = false;
+        pintarPendientes();
+      });
+    }
+    window.addEventListener('online', enviarPendientes);
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') enviarPendientes();
+    });
+
+    // ---- Arranque ----
+
+    function iniciar() {
+      if (!leer(K_CFG, null)) {
+        el('cerrarAjustes').hidden = true;
+        return mostrar('ajustes');
+      }
+      listas = leer(K_LISTAS, listas);
+      armarListas();
+      mostrar('gasto');
+      el('monto').focus();
+      enviarPendientes();
+      pedir({ accion: 'listas' }).then(function (r) {
+        if (!r.ok) return aviso('estado', r.error === 'No autorizado'
+          ? 'La clave ya no es válida. Entrá a Ajustes y cargá la nueva.' : r.error, 'mal');
+        listas = r.listas;
+        guardar(K_LISTAS, listas);
+        armarListas();
+      }).catch(function () {
+        if (!listas.categorias.length) aviso('estado', 'Sin conexión: no se pudieron cargar las categorías.', 'mal');
+      });
+    }
+    iniciar();
+
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+  </script>
+</body>
+</html>
