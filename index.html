@@ -152,6 +152,8 @@
     var K_CFG = 'gastos.cfg', K_LISTAS = 'gastos.listas', K_PEND = 'gastos.pendientes';
     var URL_VALIDA = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/;
 
+    var URL_MAL = 'La conexión guardada no apunta a la planilla. Abrí de nuevo el enlace de Finanzas → Ver claves de acceso.';
+
     function el(id) { return document.getElementById(id); }
     function leer(clave, defecto) {
       try { var v = JSON.parse(localStorage.getItem(clave)); return v == null ? defecto : v; }
@@ -188,7 +190,10 @@
       return fetch(cfg.url, {
         method: 'POST', redirect: 'follow',
         body: JSON.stringify(Object.assign({ clave: cfg.clave }, cuerpo)),
-      }).then(function (r) { return r.json(); });
+      }).then(function (r) { return r.text(); }).then(function (texto) {
+        // Si no es JSON, contesto otra cosa que no es la planilla: la URL guardada esta mal.
+        try { return JSON.parse(texto); } catch (e) { throw new Error('respuesta'); }
+      });
     }
 
     // ---- Ajustes ----
@@ -221,7 +226,7 @@
         iniciar();
       }).catch(function (e) {
         if (anterior) guardar(K_CFG, anterior); else localStorage.removeItem(K_CFG);
-        aviso('estadoAjustes', 'No se pudo conectar: ' + (e.message === 'No autorizado' ? 'la clave no es válida.' : 'revisá la URL y la conexión.'), 'mal');
+        aviso('estadoAjustes', 'No se pudo conectar: ' + (e.message === 'No autorizado' ? 'la clave no es válida.' : e.message === 'respuesta' ? 'esa URL no es la de la planilla.' : 'revisá la conexión a internet.'), 'mal');
       });
     });
 
@@ -294,9 +299,10 @@
         if (!r.ok) return aviso('estado', r.error, 'mal');
         aviso('estado', r.mensaje, 'bien');
         limpiar();
-      }).catch(function () {
-        // Sin conexión o sin respuesta: se guarda con su id y se reintenta solo, sin duplicar.
+      }).catch(function (e) {
         el('enviar').disabled = false;
+        if (e.message === 'respuesta') return aviso('estado', URL_MAL, 'mal');
+        // Sin conexión o sin respuesta: se guarda con su id y se reintenta solo, sin duplicar.
         var cola = leer(K_PEND, []);
         gasto.fecha = fechaLocal();
         cola.push(gasto);
@@ -365,7 +371,8 @@
         listas = r.listas;
         guardar(K_LISTAS, listas);
         armarListas();
-      }).catch(function () {
+      }).catch(function (e) {
+        if (e.message === 'respuesta') return aviso('estado', URL_MAL, 'mal');
         if (!listas.categorias.length) aviso('estado', 'Sin conexión: no se pudieron cargar las categorías.', 'mal');
       });
     }

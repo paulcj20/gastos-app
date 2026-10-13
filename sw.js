@@ -1,6 +1,6 @@
 // Guarda la app para que abra sin conexión. Los gastos nunca pasan por acá:
 // van directo a la planilla, y solo se interceptan los archivos de esta página.
-const CACHE = 'gastos-v1';
+const CACHE = 'gastos-v2';
 const ARCHIVOS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (evento) => {
